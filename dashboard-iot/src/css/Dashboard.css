@@ -1,0 +1,357 @@
+:root {
+  --magenta:          #D946EF;
+  --magenta-dark:     #b91ed4;
+  --magenta-light:    #e879f9;
+  --magenta-glow:     rgba(217, 70, 239, 0.25);
+  --magenta-subtle:   rgba(217, 70, 239, 0.08);
+  --magenta-border:   rgba(217, 70, 239, 0.35);
+
+  --solar-bg:         #0c0814;
+  --solar-surface:    #150c20;
+  --solar-card:       #1a1028;
+  --solar-card-hover: #201535;
+
+  --sol-border:       rgba(217, 70, 239, 0.12);
+  --sol-border-vivid: rgba(217, 70, 239, 0.30);
+
+  --sol-text:         #f5e6ff;
+  --sol-text-muted:   #9b72b8;
+  --sol-success:      #34d399;
+  --sol-warning:      #fbbf24;
+  --sol-danger:       #f87171;
+
+  --sol-radius:       12px;
+  --sol-radius-sm:    8px;
+  --sol-trans:        240ms ease;
+}
+
+/* CLASES UTILITARIAS PERSONALIZADAS */
+/* Color de texto Magenta */
+.text-magenta {
+  color: var(--magenta) !important;
+}
+
+/* Fondo Magenta (con texto blanco automático) */
+.bg-magenta {
+  background-color: var(--magenta) !important;
+  color: #ffffff !important;
+}
+
+.card-solar {
+  background: var(--solar-card) !important;
+  border: 1px solid var(--sol-border) !important;
+  border-left: 4px solid var(--magenta) !important;
+  border-radius: var(--sol-radius) !important;
+  backdrop-filter: blur(10px);
+  transition: border-color var(--sol-trans), box-shadow var(--sol-trans),
+              transform var(--sol-trans);
+  color: var(--sol-text);
+}
+
+.card-solar:hover {
+  border-color: var(--sol-border-vivid) !important;
+  border-left-color: var(--magenta-light) !important;
+  box-shadow: 0 4px 32px var(--magenta-glow), 0 0 0 1px var(--magenta-border);
+  transform: translateY(-2px);
+}
+
+.card-solar .card-body {
+  padding: 1.4rem 1.6rem;
+}
+
+/* LAYOUT DEL DASHBOARD */
+.dashboard-solar {
+  min-height: 100vh;
+  background: var(--solar-bg);
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% -5%, rgba(217,70,239,0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 40% at 90% 95%,  rgba(217,70,239,0.08) 0%, transparent 60%);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--sol-text);
+}
+
+/* Navbar Solar */
+.solar-navbar {
+  background: rgba(21, 12, 32, 0.88) !important;
+  border-bottom: 1px solid var(--sol-border-vivid);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  padding: 0.75rem 1.5rem;
+}
+
+.solar-navbar .brand-icon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 6px var(--magenta));
+}
+
+.solar-navbar .navbar-brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--sol-text) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Indicador de estado socket */
+.status-badge {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sol-text-muted);
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--sol-border);
+  background: var(--solar-surface);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+.pulse-dot.dot-online  { background: var(--sol-success); box-shadow: 0 0 6px var(--sol-success); }
+.pulse-dot.dot-offline { background: var(--sol-danger);  box-shadow: 0 0 6px var(--sol-danger);  }
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.5); }
+}
+
+/* ── KPI Cards ───────────────────────────────────────────────────── */
+.kpi-card-solar {
+  background: var(--solar-card);
+  border: 1px solid var(--sol-border);
+  border-radius: var(--sol-radius);
+  padding: 1.25rem 1.4rem;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--sol-trans), transform var(--sol-trans);
+}
+
+.kpi-card-solar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--magenta), #f43f5e);
+  opacity: 0;
+  transition: opacity var(--sol-trans);
+}
+
+.kpi-card-solar:hover {
+  box-shadow: 0 0 24px var(--magenta-glow);
+  transform: translateY(-2px);
+}
+
+.kpi-card-solar:hover::before {
+  opacity: 1;
+}
+
+.kpi-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sol-text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sol-text);
+}
+
+.kpi-icon {
+  font-size: 2rem;
+  opacity: 0.15;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ── Secciones de gráficas ───────────────────────────────────────── */
+.section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--magenta);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--sol-border-vivid);
+}
+
+/* ── Chart card header ───────────────────────────────────────────── */
+.chart-card-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--sol-text);
+  margin-bottom: 0.2rem;
+}
+
+.chart-card-subtitle {
+  font-size: 0.74rem;
+  color: var(--sol-text-muted);
+}
+
+/* ── Toast Alertas Críticas ──────────────────────────────────────── */
+.solar-toast-container {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 360px;
+}
+
+@keyframes toastSlideIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.solar-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #1a0820;
+  border: 1px solid var(--sol-danger);
+  border-left: 4px solid var(--sol-danger);
+  border-radius: var(--sol-radius-sm);
+  box-shadow: 0 0 20px rgba(248, 113, 113, 0.22);
+  animation: toastSlideIn 0.3s ease;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.solar-toast:hover {
+  box-shadow: 0 0 28px rgba(248, 113, 113, 0.35);
+}
+
+.toast-icon  { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.toast-title { font-weight: 600; color: var(--sol-danger); margin-bottom: 3px; }
+.toast-msg   { color: var(--sol-text-muted); line-height: 1.45; }
+.toast-meta  { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--magenta-light); margin-top: 3px; }
+
+/* ── Animaciones ─────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeInUp 0.4s ease both;
+}
+
+.animate-fade-up:nth-child(1) { animation-delay: 0s;    }
+.animate-fade-up:nth-child(2) { animation-delay: 0.06s; }
+.animate-fade-up:nth-child(3) { animation-delay: 0.12s; }
+.animate-fade-up:nth-child(4) { animation-delay: 0.18s; }
+
+/* ── Avatar usuario ──────────────────────────────────────────────── */
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--magenta-border);
+  object-fit: cover;
+}
+
+/* ── Botón Magenta (complementa Bootstrap) ───────────────────────── */
+.btn-magenta {
+  background: linear-gradient(135deg, var(--magenta) 0%, #a21caf 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--sol-radius-sm);
+  padding: 7px 18px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter var(--sol-trans), transform var(--sol-trans), box-shadow var(--sol-trans);
+  box-shadow: 0 2px 12px var(--magenta-glow);
+}
+
+.btn-magenta:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--magenta-glow);
+  color: #fff;
+}
+
+.btn-magenta:active {
+  transform: translateY(0);
+}
+
+/* ── Botón outline ghost ─────────────────────────────────────────── */
+.btn-solar-ghost {
+  background: transparent;
+  color: var(--sol-text-muted);
+  border: 1px solid var(--sol-border-vivid);
+  border-radius: var(--sol-radius-sm);
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all var(--sol-trans);
+}
+
+.btn-solar-ghost:hover {
+  background: var(--magenta-subtle);
+  color: var(--magenta-light);
+  border-color: var(--magenta);
+}
+
+/* ── Select personalizado ────────────────────────────────────────── */
+.solar-select {
+  background: var(--solar-surface);
+  border: 1px solid var(--sol-border-vivid);
+  border-radius: var(--sol-radius-sm);
+  color: var(--sol-text);
+  font-size: 0.82rem;
+  padding: 5px 10px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--sol-trans);
+}
+
+.solar-select:focus {
+  border-color: var(--magenta);
+  box-shadow: 0 0 0 3px var(--magenta-subtle);
+}
+
+.solar-select option {
+  background: var(--solar-card);
+  color: var(--sol-text);
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--solar-surface); }
+::-webkit-scrollbar-thumb { background: var(--magenta-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--magenta); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .solar-navbar { padding: 0.6rem 1rem; }
+  .kpi-value    { font-size: 1.6rem; }
+  .kpi-card-solar { padding: 1rem; }
+}
