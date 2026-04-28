@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import { io } from 'socket.io-client';
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { io } from "socket.io-client";
 import {
   LineChart,
   Line,
@@ -11,39 +11,38 @@ import {
   ReferenceLine,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
-import '../css/Dashboard.css'; // estilos específicos para esta gráfica
-
-/* ── Constantes ─────────────────────────────────────────────────── */
-const MAX_POINTS   = 20;
-const DEFAULT_URL  = 'http://localhost:4000';
+} from "recharts";
+import "../css/Dashboard.css";
+const MAX_POINTS = 20;
+const DEFAULT_URL = "http://localhost:4000";
 
 /* ── Helpers ────────────────────────────────────────────────────── */
 const formatTime = (ts) => {
   const d = new Date(ts);
-  return `${d.getHours().toString().padStart(2, '0')}:${d
+  return `${d.getHours().toString().padStart(2, "0")}:${d
     .getMinutes()
     .toString()
-    .padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+    .padStart(2, "0")}:${d.getSeconds().toString().padStart(2, "0")}`;
 };
 
-/* ── Tooltip personalizado ──────────────────────────────────────── */
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{
-      background: '#1a1028',
-      border: '1px solid rgba(217,70,239,0.35)',
-      borderRadius: 8,
-      padding: '10px 14px',
-      fontSize: '0.8rem',
-    }}>
-      <div style={{ color: '#9b72b8', marginBottom: 5 }}>{label}</div>
-      <div style={{ color: '#D946EF', fontWeight: 700, fontSize: '0.9rem' }}>
+    <div
+      style={{
+        background: "#1a1028",
+        border: "1px solid rgba(217,70,239,0.35)",
+        borderRadius: 8,
+        padding: "10px 14px",
+        fontSize: "0.8rem",
+      }}
+    >
+      <div style={{ color: "#9b72b8", marginBottom: 5 }}>{label}</div>
+      <div style={{ color: "#D946EF", fontWeight: 700, fontSize: "0.9rem" }}>
         {payload[0]?.value?.toFixed(1)} W
       </div>
       {payload[1] && (
-        <div style={{ color: '#fbbf24', marginTop: 3 }}>
+        <div style={{ color: "#fbbf24", marginTop: 3 }}>
           {payload[1]?.value?.toFixed(1)} V
         </div>
       )}
@@ -56,16 +55,16 @@ export default function GraficaLinea({
   nodeId,
   socketUrl = DEFAULT_URL,
   token,
-  title = 'Vatios Generados — Tiempo Real',
+  title = "Vatios Generados — Tiempo Real",
 }) {
-  const [data, setData]       = useState([]);       // puntos del gráfico
-  const [loading, setLoading] = useState(false);    // carga inicial
-  const [error, setError]     = useState(null);     // error de carga
+  const [data, setData] = useState([]); // puntos del gráfico
+  const [loading, setLoading] = useState(false); // carga inicial
+  const [error, setError] = useState(null); // error de carga
   const [connected, setConnected] = useState(false); // estado socket
-  const dataRef               = useRef([]);         // referencia mutable (evita stale closure)
-  const socketRef             = useRef(null);       // instancia socket
+  const dataRef = useRef([]); // evita que se cierre socket 
+  const socketRef = useRef(null); // instancia socket
 
-  /* ── 1. Carga inicial vía axios ───────────────────────────────── */
+  /* Carga inicial con axios */
   useEffect(() => {
     if (!nodeId) return;
 
@@ -76,30 +75,27 @@ export default function GraficaLinea({
     axios
       .get(`${socketUrl}/api/metricas/${nodeId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        params:  { minutes: 10 },
-        signal:  controller.signal,
+        params: { minutes: 10 },
+        signal: controller.signal,
       })
       .then(({ data: rows }) => {
         if (!Array.isArray(rows)) return;
-        const points = rows
-          .slice(-MAX_POINTS)
-          .map((r) => ({
-            time:   formatTime(r.timestamp),
-            vatios: parseFloat(r.vatios_generados) || 0,
-            voltaje: parseFloat(r.voltaje) || 0,
-          }));
+        const points = rows.slice(-MAX_POINTS).map((r) => ({
+          time: formatTime(r.timestamp),
+          vatios: parseFloat(r.vatios_generados) || 0,
+          voltaje: parseFloat(r.voltaje) || 0,
+        }));
         dataRef.current = points;
         setData([...points]);
       })
       .catch((err) => {
         if (!axios.isCancel(err)) {
-          console.error('[GraficaLinea] Error al cargar métricas:', err);
-          setError('No se pudieron cargar los datos iniciales.');
+          console.error("[GraficaLinea] Error al cargar métricas:", err);
+          setError("No se pudieron cargar los datos iniciales.");
         }
       })
       .finally(() => setLoading(false));
 
-    // Limpieza: cancelar petición si el componente se desmonta antes de que termine
     return () => controller.abort();
   }, [nodeId, socketUrl, token]);
 
@@ -107,35 +103,34 @@ export default function GraficaLinea({
   useEffect(() => {
     const socket = io(socketUrl, {
       ...(token && { auth: { token } }),
-      transports: ['websocket'],
+      transports: ["websocket"],
       reconnectionAttempts: 5,
     });
 
     socketRef.current = socket;
 
-    socket.on('connect', () => {
-      console.log('[GraficaLinea] Socket conectado:', socket.id);
+    socket.on("connect", () => {
+      console.log("[GraficaLinea] Socket conectado:", socket.id);
       setConnected(true);
     });
 
-    socket.on('disconnect', () => {
-      console.log('[GraficaLinea] Socket desconectado');
+    socket.on("disconnect", () => {
+      console.log("[GraficaLinea] Socket desconectado");
       setConnected(false);
     });
 
-    socket.on('connect_error', (err) => {
-      console.warn('[GraficaLinea] Error de conexión:', err.message);
+    socket.on("connect_error", (err) => {
+      console.warn("[GraficaLinea] Error de conexión:", err.message);
       setConnected(false);
     });
 
     /* Evento nueva_metrica */
     const handleMetric = (metric) => {
-      // Si el punto pertenece a un nodo diferente, ignorar
       if (nodeId && metric.nodo_id !== nodeId) return;
 
       const point = {
-        time:    formatTime(metric.timestamp ?? Date.now()),
-        vatios:  parseFloat(metric.vatios_generados) || 0,
+        time: formatTime(metric.timestamp ?? Date.now()),
+        vatios: parseFloat(metric.vatios_generados) || 0,
         voltaje: parseFloat(metric.voltaje) || 0,
       };
 
@@ -144,13 +139,13 @@ export default function GraficaLinea({
       setData([...dataRef.current]);
     };
 
-    socket.on('nueva_metrica', handleMetric);
+    socket.on("nueva_metrica", handleMetric);
 
     /* Limpieza: desconectar socket al desmontar */
     return () => {
-      socket.off('nueva_metrica', handleMetric);
+      socket.off("nueva_metrica", handleMetric);
       socket.disconnect();
-      console.log('[GraficaLinea] Socket limpiado correctamente');
+      console.log("[GraficaLinea] Socket limpiado correctamente");
     };
   }, [socketUrl, token, nodeId]); // re-conectar si cambia la URL, token o nodo
 
@@ -158,7 +153,6 @@ export default function GraficaLinea({
   return (
     <div className="card card-solar h-100">
       <div className="card-body">
-
         {/* Header */}
         <div className="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
           <div>
@@ -170,28 +164,41 @@ export default function GraficaLinea({
 
           {/* Indicador de conexión */}
           <span className="status-badge">
-            <span className={`pulse-dot ${connected ? 'dot-online' : 'dot-offline'}`} />
-            {connected ? 'En vivo' : 'Reconectando…'}
+            <span
+              className={`pulse-dot ${connected ? "dot-online" : "dot-offline"}`}
+            />
+            {connected ? "En vivo" : "Reconectando…"}
           </span>
         </div>
 
         {/* Estado de carga / error */}
         {loading && (
-          <div className="d-flex align-items-center justify-content-center" style={{ height: 260 }}>
-            <div className="spinner-border spinner-border-sm text-magenta me-2" role="status" />
-            <span style={{ color: '#9b72b8', fontSize: '0.85rem' }}>Cargando datos…</span>
+          <div
+            className="d-flex align-items-center justify-content-center"
+            style={{ height: 260 }}
+          >
+            <div
+              className="spinner-border spinner-border-sm text-magenta me-2"
+              role="status"
+            />
+            <span style={{ color: "#9b72b8", fontSize: "0.85rem" }}>
+              Cargando datos…
+            </span>
           </div>
         )}
 
         {error && !loading && (
-          <div className="alert" style={{
-            background: 'rgba(248,113,113,0.08)',
-            border: '1px solid rgba(248,113,113,0.35)',
-            borderRadius: 8,
-            color: '#f87171',
-            fontSize: '0.82rem',
-            padding: '10px 14px',
-          }}>
+          <div
+            className="alert"
+            style={{
+              background: "rgba(248,113,113,0.08)",
+              border: "1px solid rgba(248,113,113,0.35)",
+              borderRadius: 8,
+              color: "#f87171",
+              fontSize: "0.82rem",
+              padding: "10px 14px",
+            }}
+          >
             ⚠️ {error}
           </div>
         )}
@@ -210,13 +217,13 @@ export default function GraficaLinea({
               />
               <XAxis
                 dataKey="time"
-                tick={{ fontSize: 10, fill: '#9b72b8' }}
+                tick={{ fontSize: 10, fill: "#9b72b8" }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fontSize: 10, fill: '#9b72b8' }}
+                tick={{ fontSize: 10, fill: "#9b72b8" }}
                 tickLine={false}
                 axisLine={false}
                 unit=" W"
@@ -224,8 +231,14 @@ export default function GraficaLinea({
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend
-                wrapperStyle={{ fontSize: '0.75rem', color: '#9b72b8', paddingTop: 4 }}
-                formatter={(value) => value === 'vatios' ? 'Vatios (W)' : 'Voltaje (V)'}
+                wrapperStyle={{
+                  fontSize: "0.75rem",
+                  color: "#9b72b8",
+                  paddingTop: 4,
+                }}
+                formatter={(value) =>
+                  value === "vatios" ? "Vatios (W)" : "Voltaje (V)"
+                }
               />
 
               {/* Líneas de referencia */}
@@ -233,13 +246,23 @@ export default function GraficaLinea({
                 y={50}
                 stroke="#fbbf24"
                 strokeDasharray="4 4"
-                label={{ value: '50W', fill: '#fbbf24', fontSize: 9, position: 'insideTopRight' }}
+                label={{
+                  value: "50W",
+                  fill: "#fbbf24",
+                  fontSize: 9,
+                  position: "insideTopRight",
+                }}
               />
               <ReferenceLine
                 y={200}
                 stroke="#34d399"
                 strokeDasharray="4 4"
-                label={{ value: '200W', fill: '#34d399', fontSize: 9, position: 'insideTopRight' }}
+                label={{
+                  value: "200W",
+                  fill: "#34d399",
+                  fontSize: 9,
+                  position: "insideTopRight",
+                }}
               />
 
               {/* Línea principal: vatios */}
@@ -249,7 +272,12 @@ export default function GraficaLinea({
                 stroke="#D946EF"
                 strokeWidth={2.5}
                 dot={false}
-                activeDot={{ r: 5, fill: '#D946EF', stroke: '#f5e6ff', strokeWidth: 2 }}
+                activeDot={{
+                  r: 5,
+                  fill: "#D946EF",
+                  stroke: "#f5e6ff",
+                  strokeWidth: 2,
+                }}
                 isAnimationActive={false}
               />
 
@@ -261,7 +289,7 @@ export default function GraficaLinea({
                 strokeWidth={1.5}
                 dot={false}
                 strokeDasharray="5 3"
-                activeDot={{ r: 4, fill: '#fbbf24' }}
+                activeDot={{ r: 4, fill: "#fbbf24" }}
                 isAnimationActive={false}
               />
             </LineChart>
@@ -270,13 +298,15 @@ export default function GraficaLinea({
 
         {/* Mensaje cuando no hay datos */}
         {!loading && !error && data.length === 0 && (
-          <div className="d-flex align-items-center justify-content-center" style={{ height: 200 }}>
-            <span style={{ color: '#9b72b8', fontSize: '0.85rem' }}>
+          <div
+            className="d-flex align-items-center justify-content-center"
+            style={{ height: 200 }}
+          >
+            <span style={{ color: "#9b72b8", fontSize: "0.85rem" }}>
               Esperando métricas en tiempo real…
             </span>
           </div>
         )}
-
       </div>
     </div>
   );

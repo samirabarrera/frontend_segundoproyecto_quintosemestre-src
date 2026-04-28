@@ -11,7 +11,7 @@ createRoot(document.getElementById('root')).render(
       clientId="7bkrdFdYH67Ed3NT1ZmSWnuKjvHrTKVY"
       authorizationParams={{ redirect_uri: window.location.origin,
         audience: "https://dev-ukyrrcj3ae3vbym2.us.auth0.com/api/v2/"
-       }}
+      }}
     >
     <App />
     </Auth0Provider>

@@ -17,7 +17,7 @@ function App() {
   const handleLogout = () =>
     auth0Logout({ logoutParams: { returnTo: window.location.origin } });
 
-  /* ── Pantalla de carga ──────────────────────────────────────── */
+  /* Pantalla de carga */
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -27,12 +27,12 @@ function App() {
     );
   }
 
-  /* ── Dashboard autenticado ──────────────────────────────────── */
+  /* Dashboard autenticado */
   if (isAuthenticated) {
     return <Dashboard onLogout={handleLogout} />;
   }
 
-  /* ── Pantalla de login ──────────────────────────────────────── */
+  /* Pantalla de login */
   return (
     <div className="login-screen">
       <div className="login-card">

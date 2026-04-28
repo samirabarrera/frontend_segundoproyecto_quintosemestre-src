@@ -1,47 +1,39 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
-import { io } from 'socket.io-client';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useState, useEffect, useRef, useCallback } from "react";
+import axios from "axios";
+import { io } from "socket.io-client";
+import { useAuth0 } from "@auth0/auth0-react";
+import GraficaLinea from "./GraficaLinea";
+import BarChartGeneration from "./BarChartGeneration";
+import DonutStatus from "./DonutStatus";
+import LogsTable from "./LogsTable";
+import "../css/Dashboard.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-// Sub-componentes
-import GraficaLinea      from './GraficaLinea';
-import BarChartGeneration from './BarChartGeneration';
-import DonutStatus        from './DonutStatus';
-import LogsTable          from './LogsTable';
-import '../css/Dashboard.css';
-// Bootstrap 5 CSS
-import 'bootstrap/dist/css/bootstrap.min.css';
+const API_URL = "http://localhost:4000";
 
-/* ── Configuración ─────────────────────────────────────────────── */
-const API_URL = 'http://localhost:4000'; 
-
-/* ── Datos iniciales de KPIs ────────────────────────────────────── */
+/* Datos iniciales de KPIs */
 const KPI_INITIAL = { total: 0, online: 0, alerta: 0, offline: 0 };
 
-/* ══════════════════════════════════════════════════════════════════
-   Componente Principal Dashboard
-══════════════════════════════════════════════════════════════════ */
 export default function Dashboard({ onLogout }) {
   const { getAccessTokenSilently, user } = useAuth0();
 
-  /* ── Estado ──────────────────────────────────────────────────── */
-  const [token, setToken]               = useState(null);
-  const [nodes, setNodes]               = useState([]);
-  const [kpis, setKpis]                 = useState(KPI_INITIAL);
-  const [selectedNode, setSelectedNode] = useState('');
-  const [toasts, setToasts]             = useState([]);       // alertas críticas
-  const [socketOk, setSocketOk]         = useState(false);
+  /* Estado */
+  const [token, setToken] = useState(null);
+  const [nodes, setNodes] = useState([]);
+  const [kpis, setKpis] = useState(KPI_INITIAL);
+  const [selectedNode, setSelectedNode] = useState("");
+  const [toasts, setToasts] = useState([]); // alertas críticas
+  const [socketOk, setSocketOk] = useState(false);
 
   const socketRef = useRef(null); // referencia a instancia Socket.io
 
-  /* ── 1. Obtener token Auth0 ──────────────────────────────────── */
   useEffect(() => {
     getAccessTokenSilently()
       .then(setToken)
-      .catch((err) => console.error('[Dashboard] Token error:', err));
+      .catch((err) => console.error("[Dashboard] Token error:", err));
   }, [getAccessTokenSilently]);
 
-  /* ── 2. Cargar nodos con axios ───────────────────────────────── */
+  /*Cargando nodos con axios*/
   const loadNodes = useCallback(
     async (tkn) => {
       try {
@@ -58,46 +50,46 @@ export default function Dashboard({ onLogout }) {
           setSelectedNode(data[0].id);
         }
 
-        // Actualizar KPIs
-        const online  = data.filter((n) => n.estado === 'online').length;
-        const alerta  = data.filter((n) => n.estado === 'alerta').length;
-        const offline = data.filter((n) => n.estado === 'offline').length;
+        // Actualizar información de los nodos
+        const online = data.filter((n) => n.estado === "online").length;
+        const alerta = data.filter((n) => n.estado === "alerta").length;
+        const offline = data.filter((n) => n.estado === "offline").length;
         setKpis({ total: data.length, online, alerta, offline });
       } catch (err) {
-        console.error('[Dashboard] loadNodes:', err);
+        console.error("[Dashboard] loadNodes:", err);
       }
     },
-    [selectedNode]
+    [selectedNode],
   );
 
   useEffect(() => {
     if (token) loadNodes(token);
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── 3. Socket.io — conexión global del dashboard ────────────── */
+  /* Socket.io */
   useEffect(() => {
     if (!token) return;
 
     const socket = io(API_URL, {
-      auth:       { token },
-      transports: ['websocket'],
+      auth: { token },
+      transports: ["websocket"],
       reconnectionAttempts: 5,
     });
 
     socketRef.current = socket;
 
-    socket.on('connect', () => {
-      console.log('[Dashboard Socket] Conectado:', socket.id);
+    socket.on("connect", () => {
+      console.log("[Dashboard Socket] Conectado:", socket.id);
       setSocketOk(true);
     });
 
-    socket.on('disconnect', () => {
-      console.log('[Dashboard Socket] Desconectado');
+    socket.on("disconnect", () => {
+      console.log("[Dashboard Socket] Desconectado");
       setSocketOk(false);
     });
 
     /* Evento: alerta_critica → mostrar toast */
-    socket.on('alerta_critica', (data) => {
+    socket.on("alerta_critica", (data) => {
       const id = Date.now();
       setToasts((prev) => [...prev, { id, ...data }]);
       // Auto-dismiss después de 6 s
@@ -107,62 +99,58 @@ export default function Dashboard({ onLogout }) {
     });
 
     /* Evento: nueva_metrica → refrescar KPIs en background */
-    socket.on('nueva_metrica', () => {
+    socket.on("nueva_metrica", () => {
       loadNodes(token);
     });
 
-    /* ── Cleanup: desconectar socket al desmontar ── */
+    /* Cleanup: desconectar socket al desmontar */
     return () => {
       socket.disconnect();
-      console.log('[Dashboard Socket] Socket limpiado correctamente');
+      console.log("[Dashboard Socket] Socket limpiado correctamente");
     };
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token]);
 
-  /* ── Helpers ─────────────────────────────────────────────────── */
+  /* Helpers */
   const dismissToast = (id) =>
     setToasts((prev) => prev.filter((t) => t.id !== id));
 
-  /* ── KPI card config ─────────────────────────────────────────── */
+  /* Configuración de tarjetas de KPIs */
   const kpiCards = [
     {
-      id:    'kpi-total',
-      label: 'Total Nodos',
+      id: "kpi-total",
+      label: "Total Nodos",
       value: kpis.total,
-      icon:  '🌐',
-      color: 'var(--magenta)',
+      icon: "🌐",
+      color: "var(--magenta)",
     },
     {
-      id:    'kpi-online',
-      label: 'En Línea',
+      id: "kpi-online",
+      label: "En Línea",
       value: kpis.online,
-      icon:  '✅',
-      color: 'var(--sol-success)',
+      icon: "✅",
+      color: "var(--sol-success)",
     },
     {
-      id:    'kpi-alerta',
-      label: 'En Alerta',
+      id: "kpi-alerta",
+      label: "En Alerta",
       value: kpis.alerta,
-      icon:  '⚠️',
-      color: 'var(--sol-warning)',
+      icon: "⚠️",
+      color: "var(--sol-warning)",
     },
     {
-      id:    'kpi-offline',
-      label: 'Offline',
+      id: "kpi-offline",
+      label: "Offline",
       value: kpis.offline,
-      icon:  '🔴',
-      color: 'var(--sol-danger)',
+      icon: "🔴",
+      color: "var(--sol-danger)",
     },
   ];
 
-  /* ══════════════════════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════════════════════ */
+  /*  RENDER */
   return (
     <div className="dashboard-solar">
-
-      {/* ── NAVBAR ──────────────────────────────────────────────── */}
+      {/* Navbar */}
       <nav className="solar-navbar d-flex align-items-center justify-content-between">
-
         {/* Marca */}
         <div className="navbar-brand mb-0">
           <span className="brand-icon">☀️</span>
@@ -171,22 +159,20 @@ export default function Dashboard({ onLogout }) {
 
         {/* Centro: estado socket */}
         <span className="status-badge d-none d-md-flex">
-          <span className={`pulse-dot ${socketOk ? 'dot-online' : 'dot-offline'}`} />
-          {socketOk ? 'Tiempo real activo' : 'Reconectando…'}
+          <span
+            className={`pulse-dot ${socketOk ? "dot-online" : "dot-offline"}`}
+          />
+          {socketOk ? "Tiempo real activo" : "Reconectando…"}
         </span>
 
         {/* Derecha: usuario + logout */}
         <div className="d-flex align-items-center gap-3">
           {user?.picture && (
-            <img
-              src={user.picture}
-              alt="avatar"
-              className="user-avatar"
-            />
+            <img src={user.picture} alt="avatar" className="user-avatar" />
           )}
           <span
             className="d-none d-sm-inline"
-            style={{ fontSize: '0.8rem', color: 'var(--sol-text-muted)' }}
+            style={{ fontSize: "0.8rem", color: "var(--sol-text-muted)" }}
           >
             {user?.email}
           </span>
@@ -200,10 +186,12 @@ export default function Dashboard({ onLogout }) {
         </div>
       </nav>
 
-      {/* ── MAIN CONTENT ────────────────────────────────────────── */}
-      <main className="container-fluid px-3 px-md-4 py-4" style={{ maxWidth: 1600 }}>
-
-        {/* ── SECCIÓN: KPIs — Bootstrap Grid 4 columnas ── */}
+      {/*  MAIN CONTENT  */}
+      <main
+        className="container-fluid px-3 px-md-4 py-4"
+        style={{ maxWidth: 1600 }}
+      >
+        {/* SECCIÓN: KPIs — Bootstrap Grid 4 columnas */}
         <p className="section-title">
           <span>📊</span> Resumen General
         </p>
@@ -216,16 +204,23 @@ export default function Dashboard({ onLogout }) {
                 <div className="kpi-value" style={{ color: kpi.color }}>
                   {kpi.value}
                 </div>
-                <span className="kpi-icon" aria-hidden="true">{kpi.icon}</span>
+                <span className="kpi-icon" aria-hidden="true">
+                  {kpi.icon}
+                </span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* ── SECCIÓN: Selector de nodo ────────────────────── */}
+        {/* SECCIÓN: Selector de nodo */}
         {nodes.length > 0 && (
-          <div className="d-flex align-items-center gap-2 mb-4" style={{ fontSize: '0.82rem' }}>
-            <span style={{ color: 'var(--sol-text-muted)' }}>Nodo seleccionado:</span>
+          <div
+            className="d-flex align-items-center gap-2 mb-4"
+            style={{ fontSize: "0.82rem" }}
+          >
+            <span style={{ color: "var(--sol-text-muted)" }}>
+              Nodo seleccionado:
+            </span>
             <select
               id="node-selector"
               className="solar-select"
@@ -233,23 +228,23 @@ export default function Dashboard({ onLogout }) {
               onChange={(e) => setSelectedNode(e.target.value)}
             >
               {nodes.map((n) => (
-                <option key={n.id} value={n.id}>{n.nombre}</option>
+                <option key={n.id} value={n.id}>
+                  {n.nombre}
+                </option>
               ))}
             </select>
-            {/* Badge de clase .bg-magenta */}
             <span className="badge bg-magenta rounded-pill px-3">
-              {nodes.length} nodo{nodes.length !== 1 ? 's' : ''}
+              {nodes.length} nodo{nodes.length !== 1 ? "s" : ""}
             </span>
           </div>
         )}
 
-        {/* ── SECCIÓN: Gráficas Principales — Bootstrap 2 columnas ── */}
+        {/* SECCIÓN: Gráficas Principales */}
         <p className="section-title">
           <span>⚡</span> Monitoreo en Tiempo Real
         </p>
 
         <div className="row g-3 mb-4">
-          {/* GraficaLinea: ocupa col-12 en móvil, col-8 en desktop */}
           <div className="col-12 col-lg-8 animate-fade-up">
             <GraficaLinea
               nodeId={selectedNode}
@@ -259,17 +254,16 @@ export default function Dashboard({ onLogout }) {
             />
           </div>
 
-          {/* Donut estado: col-12 en móvil, col-4 en desktop */}
           <div className="col-12 col-lg-4 animate-fade-up">
             <div className="card card-solar h-100">
               <div className="card-body">
-                <DonutStatus token={token} />
+                <DonutStatus token={token} nodeId={selectedNode} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── SECCIÓN: Generación Histórica — full width ─── */}
+        {/* SECCIÓN: Generación Histórica — full width */}
         <p className="section-title">
           <span>📈</span> Generación Histórica
         </p>
@@ -291,7 +285,7 @@ export default function Dashboard({ onLogout }) {
           </div>
         </div>
 
-        {/* ── SECCIÓN: Tabla de Logs — full width ──────────── */}
+        {/* SECCIÓN: Tabla de Logs */}
         <p className="section-title">
           <span>📋</span> Historial de Logs
         </p>
@@ -305,11 +299,14 @@ export default function Dashboard({ onLogout }) {
             </div>
           </div>
         </div>
-
       </main>
 
-      {/* ── TOAST CONTAINER: alertas críticas ───────────────── */}
-      <div className="solar-toast-container" role="region" aria-label="Alertas críticas">
+      {/* TOAST CONTAINER: alertas críticas */}
+      <div
+        className="solar-toast-container"
+        role="region"
+        aria-label="Alertas críticas"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
@@ -327,8 +324,8 @@ export default function Dashboard({ onLogout }) {
               <div className="toast-msg">{t.mensaje}</div>
               {(t.vatios !== undefined || t.voltaje !== undefined) && (
                 <div className="toast-meta">
-                  {t.vatios !== undefined  && `${t.vatios}W`}
-                  {t.vatios !== undefined && t.voltaje !== undefined && ' · '}
+                  {t.vatios !== undefined && `${t.vatios}W`}
+                  {t.vatios !== undefined && t.voltaje !== undefined && " · "}
                   {t.voltaje !== undefined && `${t.voltaje}V`}
                 </div>
               )}
@@ -336,7 +333,6 @@ export default function Dashboard({ onLogout }) {
           </div>
         ))}
       </div>
-
     </div>
   );
 }
